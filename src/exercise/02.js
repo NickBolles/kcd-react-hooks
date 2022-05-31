@@ -4,12 +4,16 @@
 import * as React from 'react'
 
 const useLocalStorageState = (key, initialValue) => {
-  const [value, setValue] = React.useState(
-    () => window.localStorage.getItem(key) ?? initialValue,
-  )
+  const [value, setValue] = React.useState(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem(key)) ?? initialValue
+    } catch (e) {
+      return initialValue
+    }
+  })
 
   React.useEffect(() => {
-    window.localStorage.setItem(key, value)
+    window.localStorage.setItem(key, JSON.stringify(value))
   }, [key, value])
 
   return [value, setValue]
@@ -24,6 +28,7 @@ function Greeting({initialName = ''}) {
 
   return (
     <div>
+      Greeting:
       <form>
         <label htmlFor="name">Name: </label>
         <input value={name} onChange={handleChange} id="name" />
@@ -33,8 +38,48 @@ function Greeting({initialName = ''}) {
   )
 }
 
+function FullNameGreeting(initialUser = {first: '', last: ''}) {
+  const [user, setUser] = useLocalStorageState('user', initialUser)
+
+  const handleFirstNameChange = event =>
+    setUser({...user, first: event.target.value})
+  const handleLastNameChange = event =>
+    setUser({...user, last: event.target.value})
+  const getFullName = () => user.first + (user.last ? ' ' + user.last : '')
+
+  return (
+    <div>
+      FullNameGreeting:
+      <form>
+        <label htmlFor="firstName">First Name: </label>
+        <input
+          value={user.first}
+          onChange={handleFirstNameChange}
+          id="firstName"
+        />
+        <label htmlFor="lastName">Last Name: </label>
+        <input
+          value={user.last}
+          onChange={handleLastNameChange}
+          id="lastName"
+        />
+      </form>
+      {user.first ? (
+        <strong>Hello {getFullName(user)}</strong>
+      ) : (
+        'Please type at least your first name'
+      )}
+    </div>
+  )
+}
+
 function App() {
-  return <Greeting />
+  return (
+    <>
+      <Greeting />
+      <FullNameGreeting />
+    </>
+  )
 }
 
 export default App
